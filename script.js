@@ -1,127 +1,107 @@
-const canvas = document.getElementById("gameCanvas");
+const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// Fixed game size (better performance)
-canvas.width = 400;
-canvas.height = 600;
-
-// Scale for mobile
-const scale = Math.min(window.innerWidth / 400, window.innerHeight / 600);
-canvas.style.width = 400 * scale + "px";
-canvas.style.height = 600 * scale + "px";
-
-let gravity = 0.5;
-let gameOver = false;
-let score = 0;
-let frame = 0;
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 // Bird
 let bird = {
   x: 80,
-  y: 250,
-  width: 30,
-  height: 30,
-  velocity: 0,
-  lift: -9
+  y: 200,
+  radius: 15,
+  gravity: 0.5,
+  lift: -10,
+  velocity: 0
 };
 
 // Pipes
 let pipes = [];
+let pipeWidth = 60;
+let gap = 160;
+let frame = 0;
+let score = 0;
 
-// Controls
-document.addEventListener("keydown", jump);
-document.addEventListener("touchstart", jump);
-
+// Jump control (PC + Mobile)
 function jump() {
-  if (gameOver) {
-    location.reload();
-  }
   bird.velocity = bird.lift;
 }
 
-function createPipe() {
-  let gap = 150;
-  let topHeight = Math.random() * 300 + 50;
+document.addEventListener("keydown", jump);
+document.addEventListener("touchstart", jump);
 
+function createPipe() {
+  let top = Math.random() * (canvas.height - gap - 100) + 50;
   pipes.push({
     x: canvas.width,
-    width: 60,
-    top: topHeight,
-    bottom: canvas.height - topHeight - gap,
-    passed: false
+    top: top,
+    bottom: top + gap
   });
-}
-
-function drawBird() {
-  ctx.fillStyle = "yellow";
-  ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-}
-
-function drawPipes() {
-  ctx.fillStyle = "green";
-  pipes.forEach(pipe => {
-    ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
-    ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom);
-  });
-}
-
-function checkCollision(pipe) {
-  return (
-    bird.x < pipe.x + pipe.width &&
-    bird.x + bird.width > pipe.x &&
-    (bird.y < pipe.top ||
-     bird.y + bird.height > canvas.height - pipe.bottom)
-  );
 }
 
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (!gameOver) {
-    frame++;
+  // Bird physics
+  bird.velocity += bird.gravity;
+  bird.y += bird.velocity;
 
-    bird.velocity += gravity;
-    bird.y += bird.velocity;
-
-    if (bird.y + bird.height > canvas.height || bird.y < 0) {
-      gameOver = true;
-    }
-
-    if (frame % 90 === 0) {
-      createPipe();
-    }
-
-    pipes.forEach(pipe => {
-      pipe.x -= 2.5;
-
-      if (checkCollision(pipe)) {
-        gameOver = true;
-      }
-
-      if (!pipe.passed && pipe.x + pipe.width < bird.x) {
-        score++;
-        pipe.passed = true;
-      }
-    });
-
-    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+  if (bird.y + bird.radius > canvas.height) {
+    bird.y = canvas.height - bird.radius;
+    bird.velocity = 0;
   }
 
-  drawBird();
-  drawPipes();
+  if (bird.y - bird.radius < 0) {
+    bird.y = bird.radius;
+    bird.velocity = 0;
+  }
 
+  // Draw bird
+  ctx.beginPath();
+  ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+  ctx.fillStyle = "yellow";
+  ctx.fill();
+  ctx.closePath();
+
+  // Pipes
+  if (frame % 90 === 0) {
+    createPipe();
+  }
+
+  for (let i = 0; i < pipes.length; i++) {
+    let p = pipes[i];
+    p.x -= 3;
+
+    // Draw pipes
+    ctx.fillStyle = "green";
+    ctx.fillRect(p.x, 0, pipeWidth, p.top);
+    ctx.fillRect(p.x, p.bottom, pipeWidth, canvas.height);
+
+    // Collision
+    if (
+      bird.x + bird.radius > p.x &&
+      bird.x - bird.radius < p.x + pipeWidth &&
+      (bird.y - bird.radius < p.top ||
+        bird.y + bird.radius > p.bottom)
+    ) {
+      location.reload();
+    }
+
+    // Score
+    if (p.x + pipeWidth === bird.x) {
+      score++;
+    }
+  }
+
+  // Draw score
   ctx.fillStyle = "black";
-  ctx.font = "25px Arial";
-  ctx.fillText("Score: " + score, 20, 40);
+  ctx.font = "30px Arial";
+  ctx.fillText("Score: " + score, 20, 50);
 
-  if (gameOver) {
-    ctx.fillStyle = "red";
-    ctx.font = "40px Arial";
-    ctx.fillText("Game Over", 110, 300);
-    ctx.font = "18px Arial";
-    ctx.fillText("Tap to Restart", 140, 340);
-  }
-
+  frame++;
   requestAnimationFrame(update);
 }
 
