@@ -13,15 +13,15 @@ let bird = {
   x: 80,
   y: 200,
   radius: 15,
-  gravity: 0.5,
-  lift: -10,
+  gravity: 0.35,
+  lift: -6,
   velocity: 0
 };
 
 // Pipes
 let pipes = [];
 let pipeWidth = 60;
-let gap = 160;
+let gap = 220;
 let frame = 0;
 let score = 0;
 
@@ -73,7 +73,7 @@ function update() {
 
   for (let i = 0; i < pipes.length; i++) {
     let p = pipes[i];
-    p.x -= 3;
+    p.x -= 2;
 
     // Draw pipes
     ctx.fillStyle = "green";
