@@ -1,31 +1,35 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Dynamic canvas size
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+// Fixed game size (better performance)
+canvas.width = 400;
+canvas.height = 600;
+
+// Scale for mobile
+const scale = Math.min(window.innerWidth / 400, window.innerHeight / 600);
+canvas.style.width = 400 * scale + "px";
+canvas.style.height = 600 * scale + "px";
 
 let gravity = 0.5;
 let gameOver = false;
 let score = 0;
+let frame = 0;
 
 // Bird
 let bird = {
-  x: canvas.width * 0.2,
-  y: canvas.height / 2,
-  width: 40,
-  height: 40,
+  x: 80,
+  y: 250,
+  width: 30,
+  height: 30,
   velocity: 0,
-  lift: -10
+  lift: -9
 };
 
 // Pipes
 let pipes = [];
 
-// Controls (PC)
+// Controls
 document.addEventListener("keydown", jump);
-
-// Controls (Mobile)
 document.addEventListener("touchstart", jump);
 
 function jump() {
@@ -35,26 +39,24 @@ function jump() {
   bird.velocity = bird.lift;
 }
 
-// Create pipes
 function createPipe() {
-  let gap = canvas.height * 0.25;
-  let topHeight = Math.random() * (canvas.height - gap - 100) + 50;
+  let gap = 150;
+  let topHeight = Math.random() * 300 + 50;
 
   pipes.push({
     x: canvas.width,
     width: 60,
     top: topHeight,
-    bottom: canvas.height - topHeight - gap
+    bottom: canvas.height - topHeight - gap,
+    passed: false
   });
 }
 
-// Draw bird
 function drawBird() {
   ctx.fillStyle = "yellow";
   ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
 }
 
-// Draw pipes
 function drawPipes() {
   ctx.fillStyle = "green";
   pipes.forEach(pipe => {
@@ -63,7 +65,6 @@ function drawPipes() {
   });
 }
 
-// Collision check
 function checkCollision(pipe) {
   return (
     bird.x < pipe.x + pipe.width &&
@@ -77,48 +78,48 @@ function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (!gameOver) {
+    frame++;
 
-    // Gravity
     bird.velocity += gravity;
     bird.y += bird.velocity;
 
-    // Ground & Top collision
     if (bird.y + bird.height > canvas.height || bird.y < 0) {
       gameOver = true;
     }
 
-    // Create pipes
-    if (Math.random() < 0.02) {
+    if (frame % 90 === 0) {
       createPipe();
     }
 
     pipes.forEach(pipe => {
-      pipe.x -= 3;
+      pipe.x -= 2.5;
 
       if (checkCollision(pipe)) {
         gameOver = true;
       }
 
-      if (pipe.x + pipe.width === bird.x) {
+      if (!pipe.passed && pipe.x + pipe.width < bird.x) {
         score++;
+        pipe.passed = true;
       }
     });
+
+    pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
   }
 
   drawBird();
   drawPipes();
 
-  // Score
   ctx.fillStyle = "black";
-  ctx.font = "30px Arial";
-  ctx.fillText("Score: " + score, 20, 50);
+  ctx.font = "25px Arial";
+  ctx.fillText("Score: " + score, 20, 40);
 
   if (gameOver) {
     ctx.fillStyle = "red";
-    ctx.font = "50px Arial";
-    ctx.fillText("Game Over", canvas.width / 2 - 140, canvas.height / 2);
-    ctx.font = "25px Arial";
-    ctx.fillText("Tap or Press Key to Restart", canvas.width / 2 - 160, canvas.height / 2 + 50);
+    ctx.font = "40px Arial";
+    ctx.fillText("Game Over", 110, 300);
+    ctx.font = "18px Arial";
+    ctx.fillText("Tap to Restart", 140, 340);
   }
 
   requestAnimationFrame(update);
