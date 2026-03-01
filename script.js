@@ -25,6 +25,9 @@ let gap = 220;
 let frame = 0;
 let score = 0;
 
+// 🔥 High Score (NEW)
+let highScore = localStorage.getItem("highScore") || 0;
+
 // Jump control (PC + Mobile)
 function jump() {
   bird.velocity = bird.lift;
@@ -93,6 +96,12 @@ function update() {
     // Score
     if (p.x + pipeWidth === bird.x) {
       score++;
+
+      // 🔥 Update High Score
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("highScore", highScore);
+      }
     }
   }
 
@@ -100,6 +109,9 @@ function update() {
   ctx.fillStyle = "black";
   ctx.font = "30px Arial";
   ctx.fillText("Score: " + score, 20, 50);
+
+  // 🔥 Draw High Score
+  ctx.fillText("High Score: " + highScore, 20, 90);
 
   frame++;
   requestAnimationFrame(update);
