@@ -25,10 +25,10 @@ let gap = 220;
 let frame = 0;
 let score = 0;
 
-// 🔥 High Score (NEW)
+// ✅ High Score
 let highScore = localStorage.getItem("highScore") || 0;
 
-// Jump control (PC + Mobile)
+// Jump control
 function jump() {
   bird.velocity = bird.lift;
 }
@@ -41,7 +41,8 @@ function createPipe() {
   pipes.push({
     x: canvas.width,
     top: top,
-    bottom: top + gap
+    bottom: top + gap,
+    passed: false   // ✅ important
   });
 }
 
@@ -93,11 +94,11 @@ function update() {
       location.reload();
     }
 
-    // Score
-    if (p.x + pipeWidth === bird.x) {
+    // ✅ Proper Score Logic
+    if (!p.passed && p.x + pipeWidth < bird.x) {
       score++;
+      p.passed = true;
 
-      // 🔥 Update High Score
       if (score > highScore) {
         highScore = score;
         localStorage.setItem("highScore", highScore);
@@ -109,8 +110,6 @@ function update() {
   ctx.fillStyle = "black";
   ctx.font = "30px Arial";
   ctx.fillText("Score: " + score, 20, 50);
-
-  // 🔥 Draw High Score
   ctx.fillText("High Score: " + highScore, 20, 90);
 
   frame++;
